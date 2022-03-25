@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://unpkg.com/vue@3"></script>
+    <title>Books</title>
+    <style>
+        button,
+        button:active,
+        button:focus {
+            outline: none !important;
+        }
+
+        .text-danger {
+            color: #ff0018 !important;
+        }
+
+        .bg-danger {
+            background-color: #ff0018 !important;
+        }
+
+        .book {
+            cursor: pointer;
+            transition: all .3s ease-in-out;
+            box-shadow: 2px 2px 2px lightgray;
+            background-image: linear-gradient(to bottom, transparent 70%, rgb(245 245 245));
+        }
+
+        .book:hover {
+            background-image: linear-gradient(to bottom, rgb(245 245 245) 70%, transparent);
+        }
+
+        .card-title {
+            transition: all .3s ease-in-out;
+        }
+
+        .book:hover .card-title {
+            color: blue;
+        }
+
+        .more,
+        .less,
+        .none {
+            font-weight: bold;
+        }
+
+        .more {
+            color: green;
+        }
+
+        .less {
+            color: gold;
+        }
+
+        .none {
+            color: red;
+        }
+
+        .price {
+            width: 60px;
+            height: 60px;
+            line-height: 60px;
+            text-align: center;
+        }
+
+        .btns {
+            box-shadow: 2px 2px 10px #c4c4c4, -2px -2px 10px gainsboro;
+            padding: 0px 6px;
+        }
+
+        .fa-solid {
+            font-size: 25px;
+        }
+
+        .cartCounter {
+            top: -15px;
+            left: 15px;
+            font-size: 15px;
+            border-radius: 50%;
+            height: 25px;
+            width: 25px;
+            line-height: 25px;
+            text-align: center;
+        }
+        [v-cloak]{
+            display: none;
+        }
+    </style>
+</head>
+
+<body id="app" v-cloak>
+    <div class="container">
+        <div class="d-flex justify-content-between p-4 bg-primary">
+            <a href="#" class="text-white fw-bold text-decoration-none" @click.prevent="toggleToProducts()"> All
+                Books</a>
+            <div>
+                <span class="text-white">{{getTotalPrice()}}</span>
+                <div class="fa-solid fa-cart-shopping text-white position-relative mx-4"
+                    style="cursor: pointer;font-size: 28px;" @click="toggleToCart()">
+                    <span class="position-absolute bg-danger cartCounter">{{cart.books.length}}</span>
+                </div>
+                <div class="fa-solid fa-heart text-white position-relative text-danger"
+                    style="cursor: pointer;font-size: 28px;" @click.prevent="toggleToList()">
+                    <span class="position-absolute bg-light cartCounter">{{list.books.length}}</span>
+                </div>
+            </div>
+        </div>
+        <div class="row my-5 align-items-stretch" v-if="!isCartVisible && !isListVisible">
+            <div class="col-md-3 my-3 align-items-stretch d-flex" v-for="book in booksData">
+                <div class="book position-relative">
+                    <div
+                        class="price position-absolute btn-primary text-white m-3 fw-bold border border-white rounded-circle">
+                        {{book.price.displayValue}}</div>
+                    <img :src="book.image" class="card-img-top img-fluid" style="height:360px" alt="">
+                    <div class="card-body">
+                        <h5 class="card-title">{{book.title}}</h5>
+                        <p class="card-text">{{book.summary.substr(1, 100) + "...."}}</p>
+                        <div class="btns d-flex justify-content-between align-items-center">
+                            <div>
+                                <button class="btn text-primary" title="Add to Cart" :disabled="book.stock ==0"
+                                    @click.prevent="addtocart(book)"><i class="fa-solid fa-cart-plus"></i></button>
+                                <a href="#" :id="book.ISBN" class="btn text-danger" v-if="book.isLiked!=true"
+                                    title="Add to List" @click.prevent="addtoList(book)"><i
+                                        class="fa-solid fa-heart-circle-plus"></i></a>
+                            </div>
+                            <div
+                                :class="[book.stock >=5 ? 'more' : '',book.stock <5 ? 'less' : '',book.stock ==0 ? 'none' : '']">
+                                InStock : {{book.stock}}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End OF Books -->
+        <div class="row" v-if="isCartVisible">
+            <div class=" col-12 align-items-center mt-5">
+                <p class="text-danger m-auto text-center fw-bold mt-3" v-if="cart.books.length==0">Sorry ,Your Card Is
+                    Empty ...<br> Please Add Items</p>
+                <!-- Display Cart Content -->
+                <table class="table table-striped text-center">
+                    <thead v-if="cart.books.length >0">
+                        <tr>
+                            <th scope="col">ISBN</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Actions</th>
+                            <th scope="col">Total Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="book in cart.books">
+                            <th scope="row">{{book.book.ISBN}}</th>
+                            <td>{{book.book.title}}</td>
+                            <td>{{book.book.price.value}}</td>
+                            <td>{{book.quantity}}</td>
+                            <td>
+                                <button class="btn bg-primary mx-2 px-3 py-1 text-white fw-bold"
+                                    @click="increaseQuantity(book)">+</button>
+                                <button class="btn bg-danger px-3 py-1 text-white fw-bold"
+                                    @click="decreaseQuantity(book)">-</button>
+                            </td>
+                            <td>{{book.quantity*book.book.price.value}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- End OF CART -->
+        <div class="row" v-if="isListVisible">
+            <div class=" col-12 align-items-center mt-5">
+                <p class="text-danger m-auto text-center fw-bold mt-3" v-if="list.books.length==0">Sorry ,Your Wish List
+                    Is Empty ...<br> Please Add Items</p>
+                <!-- Display Cart Content -->
+                <table class="table table-striped text-center">
+                    <thead v-if="list.books.length >0">
+                        <tr>
+                            <th scope="col">ISBN</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Author</th>
+                            <th scope="col">Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="book in list.books">
+                            <th scope="row">{{book.book.ISBN}}</th>
+                            <td>{{book.book.title}}</td>
+                            <td>{{book.book.price.value}}</td>
+                            <td>{{book.book.author}}</td>
+                            <td>
+                                <button class="btn bg-danger px-3 py-1 text-white fw-bold"
+                                    @click="removeFromList(book.book)">Remove From List</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="./books.js"></script>
+    <script>
+        Vue.createApp({
+            data: () => ({
+                booksData: booksData,
+                isCartVisible: false,
+                isListVisible: false,
+                isLiked: false,
+                cart: {
+                    books: [],
+                },
+                list: {
+                    books: [],
+                }
+            }),
+            methods: {
+                toggleToProducts() {
+                    this.isCartVisible = false;
+                    this.isListVisible = false
+                },
+                toggleToList() {
+                    this.isCartVisible = false;
+                    this.isListVisible = true
+                },
+                toggleToCart() {
+                    this.isCartVisible = true;
+                    this.isListVisible = false
+                },
+                addtocart(book) {
+                    if (!this.chechExistance(book)) {
+                        this.cart.books.push({
+                            book: book,
+                            quantity: 1
+                        })
+                    } else {
+                        this.cart.books.find(itme => itme.book.ISBN == book.ISBN).quantity++;
+                    }
+                    book.stock--;
+                },
+                getTotalPrice() {
+                    let totalPrice = 0;
+                    for (let i = 0; i < this.cart.books.length; i++) {
+                        totalPrice += this.cart.books[i].book.price.value * this.cart.books[i].quantity;
+                    }
+                    return totalPrice;
+                },
+                chechExistance(book) {
+                    console.log(this.cart.books.some(itme => itme.book.ISBN === book.ISBN));
+                    return this.cart.books.some(itme => itme.book.ISBN === book.ISBN);
+                },
+                increaseQuantity(book) {
+                    book.quantity++;
+                    book.book.stock--;
+                },
+                decreaseQuantity(book) {
+                    book.quantity--;
+                    if (book.quantity == 0) {
+                        this.cart.books.splice(this.cart.books.findIndex(Iitme => Iitme.book.ISBN == book.book
+                            .ISBN), 1)
+                    }
+                    book.book.stock++;
+                },
+                addtoList(book) {
+                    if (!this.chechExistanceInList(book)) {
+                        this.list.books.push({
+                            book: book,
+                        })
+                    }
+                    book.isLiked = true;
+                },
+                chechExistanceInList(book) {
+                    return this.list.books.some(itme => itme.book.ISBN === book.ISBN);
+                },
+                removeFromList(book) {
+                    this.list.books.splice(this.list.books.findIndex(Iitme => Iitme.book.ISBN == book.ISBN), 1);
+                    book.isLiked = false;
+                }
+            }
+
+        }).mount('#app')
+    </script>
+</body>
+
+</html>
